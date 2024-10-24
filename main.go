@@ -66,12 +66,15 @@ func main() {
 	// 	}
 	// }
 
-	loadedGraph, err := LoadGraphJson[string]("./out.json")
-	if err != nil {
-		fmt.Println(err)
-	}
-	// fmt.Println(loadedGraph)
-	loadedGraph.Stats()
+	// loadedGraph, err := LoadGraphJson[string]("./out.json")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// // fmt.Println(loadedGraph)
+	// loadedGraph.Stats()
+
+	isConnected, count := graph.Connected()
+	fmt.Println("Connected:", isConnected, "\nReachable: ", count)
 
 
 }

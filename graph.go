@@ -9,22 +9,22 @@ import (
 )
 
 // A node has a value and neighbours
-type Node[T any] struct {
+type Node[T comparable] struct {
 	value      T
 	neighbours EdgeSet[T]
 }
 
 // Connection between nodes
-type Edge[T any] struct {
+type Edge[T comparable] struct {
 	a, b *Node[T]
 }
 
 // Store nodes and edges in a hash set
-type EdgeSet[T any] map[Edge[T]]bool
-type NodeSet[T any] map[*Node[T]]bool
+type EdgeSet[T comparable] map[Edge[T]]bool
+type NodeSet[T comparable] map[*Node[T]]bool
 
 // Graph contains nodes and edges
-type Graph[T any] struct {
+type Graph[T comparable] struct {
 	nodes NodeSet[T]
 	edges EdgeSet[T]
 	root  *Node[T]
@@ -66,13 +66,13 @@ func (g *Graph[T]) Disconnect(eg Edge[T]) {
 }
 
 // Initialize an empty graph
-func EmptyGraph[T any]() *Graph[T] {
+func EmptyGraph[T comparable]() *Graph[T] {
 	g := Graph[T]{make(NodeSet[T]), make(EdgeSet[T]), nil}
 	return &g
 }
 
 // Initialize a graph with N nodes
-func NewGraph[T any](N int, value T) *Graph[T] {
+func NewGraph[T comparable](N int, value T) *Graph[T] {
 	g := Graph[T]{make(NodeSet[T], N), make(EdgeSet[T]), nil}
 	g.AddNodes(N, value)
 	return &g
@@ -149,15 +149,20 @@ func (e EdgeSet[T]) String() string {
 	return strings.Join(strs, "\n")
 }
 
-func (g *Graph[T]) Stats() {
-	fmt.Printf("Number of nodes: %d, number of edges: %d, average degree: %.2f\n", len(g.nodes), len(g.edges), 2.0*float64(len(g.edges))/float64(len(g.nodes)))
-}
 
+
+// Format a graph to string
 func (g *Graph[T]) String() string {
 	return fmt.Sprintf("Number of nodes: %d, number of edges: %d, average degree: %.2f\n%v", len(g.nodes), len(g.edges), 2.0*float64(len(g.edges))/float64(len(g.nodes)), g.edges)
 }
 
-func RandomGraph[T any](N int, value T, maxEdges int, seed int64) *Graph[T] {
+// Quickly print graph stats
+func (g *Graph[T]) Stats() {
+	fmt.Printf("Number of nodes: %d, number of edges: %d, average degree: %.2f\n", len(g.nodes), len(g.edges), 2.0*float64(len(g.edges))/float64(len(g.nodes)))
+}
+
+// Builds a random graph by first creating a spanning tree, and then adding random edges until the desired amount is reached
+func RandomGraph[T comparable](N int, value T, maxEdges int, seed int64) *Graph[T] {
 
 	edgeCount := 0
 	r := rand.New(rand.NewSource(seed))
@@ -201,13 +206,61 @@ func RandomGraph[T any](N int, value T, maxEdges int, seed int64) *Graph[T] {
 	return graph
 }
 
-type JsonEdge[T any] struct {
+// Depth first traversal of graph
+func (node *Node[T]) Walk(visited NodeSet[T], process func(*Node[T], NodeSet[T])) {
+	visited[node] = true
+	process(node, visited)
+	for e := range node.neighbours {
+		var n *Node[T]
+		if node != e.a {
+			n = e.a
+		} else {
+			n = e.b
+		}
+		if !visited[n] {
+			n.Walk(visited, process)
+		}
+	}
+}
+
+// Check whether the graph is connected or not
+func (g *Graph[T]) Connected() (bool, int) {
+	if g.root == nil { return true, 0 }
+	count := 0
+	countNodes := func(n *Node[T], _ NodeSet[T]) {
+		count++
+	}
+	g.root.Walk(make(NodeSet[T]), countNodes)
+	return len(g.nodes) == count, count
+}
+
+// Check whether a graph has been colored with max m colors
+func (g *Graph[T]) Colored(m int) (bool, int, EdgeSet[T]) {
+	if g.root == nil { return true, 0, nil }
+	colors := make(map[T]bool)
+	conflicts := make(EdgeSet[T])
+
+	checkColor := func(n *Node[T], _ NodeSet[T]) {
+		colors[n.value] = true
+		for e := range n.neighbours {
+			if e.a.value == e.b.value {
+				conflicts[e] = true
+			}
+		}
+	}
+	g.root.Walk(make(NodeSet[T]), checkColor)
+	return len(conflicts) == 0 && len(colors) <= m, len(colors), conflicts
+}
+
+// Save edges in this json format
+type JsonEdge[T comparable] struct {
 	A    int
 	B    int
 	AVal T
 	BVal T
 }
 
+// Save a graph to a json file
 func (g *Graph[T]) SaveJson(path string) error {
 
 	nodeIds := make(map[*Node[T]]int)
@@ -253,7 +306,8 @@ func (g *Graph[T]) SaveJson(path string) error {
 	return nil
 }
 
-func LoadGraphJson[T any](path string) (*Graph[T], error) {
+// Load a graph from a json file
+func LoadGraphJson[T comparable](path string) (*Graph[T], error) {
 
 	nodes := make(map[int]*Node[T])
 	jsonEdges := new([]JsonEdge[T])
