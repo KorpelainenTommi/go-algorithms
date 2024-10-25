@@ -281,5 +281,6 @@ func RunGraphColor() {
 
 }
 
-// Excellent rendering tool for visualizing the graph data
+// Excellent and simple online rendering tools for visualizing the graph data
+// https://csacademy.com/app/graph_editor/
 // https://mikhad.github.io/graph-builder/#2023
