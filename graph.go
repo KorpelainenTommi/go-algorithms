@@ -1,3 +1,6 @@
+// Graph structures and methods
+// graphs use an implementation based on pointer-keyed maps
+
 package main
 
 import (
@@ -149,8 +152,6 @@ func (e EdgeSet[T]) String() string {
 	return strings.Join(strs, "\n")
 }
 
-
-
 // Format a graph to string
 func (g *Graph[T]) String() string {
 	return fmt.Sprintf("Number of nodes: %d, number of edges: %d, average degree: %.2f\n%v", len(g.nodes), len(g.edges), 2.0*float64(len(g.edges))/float64(len(g.nodes)), g.edges)
@@ -161,7 +162,8 @@ func (g *Graph[T]) Stats() {
 	fmt.Printf("Number of nodes: %d, number of edges: %d, average degree: %.2f\n", len(g.nodes), len(g.edges), 2.0*float64(len(g.edges))/float64(len(g.nodes)))
 }
 
-// Builds a random graph by first creating a spanning tree, and then adding random edges until the desired amount is reached
+// Builds a random graph by first creating a spanning tree,
+// then adding random edges until the desired amount is reached
 func RandomGraph[T comparable](N int, value T, maxEdges int, seed int64) *Graph[T] {
 
 	edgeCount := 0
@@ -175,7 +177,7 @@ func RandomGraph[T comparable](N int, value T, maxEdges int, seed int64) *Graph[
 	group = append(group, graph.root)
 
 	for k := range graph.nodes {
-		choice := group[r.Intn(len(group))]
+		choice := group[r.Intn(len(group))] // Random connection to the connected graph
 		graph.Connect(Edge[T]{k, choice})
 		edgeCount++
 		if !connected[k] {
@@ -189,8 +191,11 @@ func RandomGraph[T comparable](N int, value T, maxEdges int, seed int64) *Graph[
 	}
 
 	if edgeCount >= maxEdges {
+		// We exceeded maxedges by making a connected graph, meaning it has average degree 2
 		fmt.Println("Minimally connected tree")
 	} else {
+		// A random connection can try to recreate an existing edge, which won't change the graph
+		// Iterate until a large threshold to get as close to desired edgecount
 		for iterations := 0; edgeCount < maxEdges && iterations < 100000; {
 			a := group[r.Intn(len(group))]
 			b := group[r.Intn(len(group))]
@@ -206,10 +211,10 @@ func RandomGraph[T comparable](N int, value T, maxEdges int, seed int64) *Graph[
 	return graph
 }
 
-// Depth first traversal of graph
-func (node *Node[T]) Walk(visited NodeSet[T], process func(*Node[T], NodeSet[T])) {
+// Depth first traversal of graph, track visited nodes and number their depth
+func (node *Node[T]) Walk(visited NodeSet[T], i int, process func(*Node[T], int, NodeSet[T])) {
 	visited[node] = true
-	process(node, visited)
+	process(node, i, visited)
 	for e := range node.neighbours {
 		var n *Node[T]
 		if node != e.a {
@@ -218,29 +223,36 @@ func (node *Node[T]) Walk(visited NodeSet[T], process func(*Node[T], NodeSet[T])
 			n = e.b
 		}
 		if !visited[n] {
-			n.Walk(visited, process)
+			n.Walk(visited, i+1, process)
 		}
 	}
 }
 
 // Check whether the graph is connected or not
 func (g *Graph[T]) Connected() (bool, int) {
-	if g.root == nil { return true, 0 }
+	if g.root == nil {
+		return true, 0
+	}
 	count := 0
-	countNodes := func(n *Node[T], _ NodeSet[T]) {
+	countNodes := func(n *Node[T], _ int, _ NodeSet[T]) {
 		count++
 	}
-	g.root.Walk(make(NodeSet[T]), countNodes)
+
+	// Walk the graph to see how many nodes we reach
+	g.root.Walk(make(NodeSet[T]), 0, countNodes)
 	return len(g.nodes) == count, count
 }
 
 // Check whether a graph has been colored with max m colors
+// Returns the amount of colors used and possible conflict edges
 func (g *Graph[T]) Colored(m int) (bool, int, EdgeSet[T]) {
-	if g.root == nil { return true, 0, nil }
+	if g.root == nil {
+		return true, 0, nil
+	}
 	colors := make(map[T]bool)
 	conflicts := make(EdgeSet[T])
 
-	checkColor := func(n *Node[T], _ NodeSet[T]) {
+	checkColor := func(n *Node[T], _ int, _ NodeSet[T]) {
 		colors[n.value] = true
 		for e := range n.neighbours {
 			if e.a.value == e.b.value {
@@ -248,7 +260,7 @@ func (g *Graph[T]) Colored(m int) (bool, int, EdgeSet[T]) {
 			}
 		}
 	}
-	g.root.Walk(make(NodeSet[T]), checkColor)
+	g.root.Walk(make(NodeSet[T]), 0, checkColor)
 	return len(conflicts) == 0 && len(colors) <= m, len(colors), conflicts
 }
 
