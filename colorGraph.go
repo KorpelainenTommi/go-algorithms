@@ -116,7 +116,6 @@ func (g *Graph[T]) Color(c int, colors []T) error {
 		return 1
 	}
 
-
 	// Backtrack to a multiple color choice node and remove the used color option
 	backtrack := func() bool {
 		for i := 0; i < len(backlog); i++ {
@@ -129,7 +128,7 @@ func (g *Graph[T]) Color(c int, colors []T) error {
 					break
 				}
 				// Clear backlog after i
-				for j := i+1; j < len(backlog); j++ {
+				for j := i + 1; j < len(backlog); j++ {
 					backlog[j].node.value = backlog[j].original
 				}
 				// Restart backlog keeping from i
@@ -180,6 +179,7 @@ func RunGraphColor() {
 	var D float64    // Average node degree
 	var Out string   // Output file
 	var noPrint bool // Use this for large N to prevent filling the terminal
+	var noSave bool  // Disable save prompt
 
 	var seed = time.Now().UnixNano()
 	var intSeed int
@@ -197,6 +197,8 @@ func RunGraphColor() {
 			fmt.Sscanf(os.Args[i+1], "%s", &Out)
 		case "--noprint":
 			noPrint = true
+		case "--nosave":
+			noSave = true
 		}
 	}
 
@@ -253,17 +255,17 @@ func RunGraphColor() {
 		fmt.Println("Printing the graph", graph)
 	}
 
-	if len(Out) < 1 {
-		saveGraph := "N"
-		fmt.Println("Save graph to file? (Y/N)")
+	if !noSave && len(Out) < 1 {
+		saveGraph := "n"
+		fmt.Println("Save graph to file? (y/n)")
 		fmt.Scanf("%s\n", &saveGraph)
-		if saveGraph == "Y" {
+		if saveGraph == "y" {
 			fmt.Print("Filename: ")
 			fmt.Scanf("%s\n", &Out)
 		}
 	}
 
-	if len(Out) > 0 {
+	if !noSave && len(Out) > 0 {
 		if err := graph.SaveJson(Out); err != nil {
 			fmt.Println(err)
 		} else {

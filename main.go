@@ -38,6 +38,8 @@ func main() {
 	switch P {
 	case 1:
 		RunGraphColor()
+	case 2:
+		RunLocalMinimum()
 	default:
 		fmt.Println("Not a recognized program")
 		os.Exit(1)
