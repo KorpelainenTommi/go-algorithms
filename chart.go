@@ -19,7 +19,7 @@ func PlotFunction(f []float64, minimum int) {
 		data := make([]opts.LineData, len(f))
 
 		for i := range axis {
-			axis[i] = fmt.Sprintf("%v", i)
+			axis[i] = fmt.Sprint(i)
 		}
 
 		for i := range data {
@@ -42,6 +42,55 @@ func PlotFunction(f []float64, minimum int) {
 				SymbolSize: 80,
 			}))
 		line.Render(w)
+	})
+
+	fmt.Println("Starting server on http://localhost:8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println(err)
+	}
+}
+
+func PlotGraph(g *Graph[string]) {
+
+	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		graph := charts.NewGraph()
+		globalOpts := charts.WithTitleOpts(opts.Title{Title: "K-Coloring"})
+		graph.SetGlobalOptions(globalOpts)
+
+		nodes := make([]opts.GraphNode, len(g.nodes))
+		links := make([]opts.GraphLink, len(g.edges))
+		numbering := make(map[*Node[string]]int)
+
+		i := 0
+		for node := range g.nodes {
+			nodes[i] = opts.GraphNode{
+				Name:      fmt.Sprintf("%d%v", i+1, node),
+				ItemStyle: &opts.ItemStyle{Color: node.value},
+			}
+			numbering[node] = i + 1
+			i++
+		}
+
+		i = 0
+		for edge := range g.edges {
+			links[i] = opts.GraphLink{
+				Source: fmt.Sprintf("%d%v", numbering[edge.a], edge.a),
+				Target: fmt.Sprintf("%d%v", numbering[edge.b], edge.b),
+				LineStyle: &opts.LineStyle{
+					Color: "black",
+					Width: 2,
+				},
+			}
+			i++
+		}
+
+		graph.AddSeries("Colored", nodes, links, charts.WithGraphChartOpts(opts.GraphChart{
+			Force:     &opts.GraphForce{Repulsion: 800},
+			Layout:    "force",
+			Roam:      opts.Bool(true),
+			Draggable: opts.Bool(true),
+		}))
+		graph.Render(w)
 	})
 
 	fmt.Println("Starting server on http://localhost:8080")

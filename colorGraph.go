@@ -175,11 +175,12 @@ func (g *Graph[T]) Color(c int, colors []T) error {
 
 // Program to demonstrate the graph coloring algorithm
 func RunGraphColor() {
-	var N int        // Number of nodes for graph
-	var D float64    // Average node degree
-	var Out string   // Output file
-	var noPrint bool // Use this for large N to prevent filling the terminal
-	var noSave bool  // Disable save prompt
+	var N int          // Number of nodes for graph
+	var D float64      // Average node degree
+	var Out string     // Output file
+	var noPrint bool   // Use this for large N to prevent filling the terminal
+	var noVisuals bool // Do not visualize the graph
+	var noSave bool    // Disable save prompt
 
 	var seed = time.Now().UnixNano()
 	var intSeed int
@@ -197,6 +198,8 @@ func RunGraphColor() {
 			fmt.Sscanf(os.Args[i+1], "%s", &Out)
 		case "--noprint":
 			noPrint = true
+		case "--novisuals":
+			noVisuals = true
 		case "--nosave":
 			noSave = true
 		}
@@ -231,7 +234,7 @@ func RunGraphColor() {
 
 	graph := RandomGraph(N, "C", maxEdges, seed)
 
-	err := graph.Color(5, []string{"Red", "Green", "Blue", "Cyan", "Pink"})
+	err := graph.Color(5, []string{"red", "green", "blue", "cyan", "orange"})
 
 	if err != nil {
 		fmt.Println("Unable to color the graph:", err)
@@ -270,6 +273,17 @@ func RunGraphColor() {
 			fmt.Println(err)
 		} else {
 			fmt.Printf("Saved to %s\n", Out)
+		}
+	}
+
+	if noVisuals {
+		fmt.Println("--novisuals specified")
+	} else {
+		visualize := "n"
+		fmt.Println("Display the graph in a browser? (y/n)")
+		fmt.Scanf("%s\n", &visualize)
+		if visualize == "y" {
+			PlotGraph(graph)
 		}
 	}
 
