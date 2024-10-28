@@ -83,3 +83,10 @@ start: 288 end: 290 i: 289
 Local minimum is -3.38 at i = 289
 --novisuals specified
 ```
+------
+
+![Graph color image](https://github.com/KorpelainenTommi/go-algorithms/blob/main/graph-color-example.png)
+
+------
+
+![Graph color image](https://github.com/KorpelainenTommi/go-algorithms/blob/main/local-minimum-example.png)
