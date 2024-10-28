@@ -12,8 +12,13 @@ func PlotFunction(f []float64, minimum int) {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		line := charts.NewLine()
-		globalOpts := charts.WithTitleOpts(opts.Title{Title: "Local minimum"})
-		line.SetGlobalOptions(globalOpts)
+		line.SetGlobalOptions(charts.WithInitializationOpts(opts.Initialization{
+			Width:  "60vw",
+			Height: "30vw",
+		}))
+		line.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+			Title: "Local minimum",
+		}))
 
 		axis := make([]string, len(f))
 		data := make([]opts.LineData, len(f))
@@ -54,8 +59,13 @@ func PlotGraph(g *Graph[string]) {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		graph := charts.NewGraph()
-		globalOpts := charts.WithTitleOpts(opts.Title{Title: "K-Coloring"})
-		graph.SetGlobalOptions(globalOpts)
+		graph.SetGlobalOptions(charts.WithInitializationOpts(opts.Initialization{
+			Width:  "80vw",
+			Height: "80vw",
+		}))
+		graph.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+			Title: "K-Coloring",
+		}))
 
 		nodes := make([]opts.GraphNode, len(g.nodes))
 		links := make([]opts.GraphLink, len(g.edges))
