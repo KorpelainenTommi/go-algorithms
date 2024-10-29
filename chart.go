@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+
+	"image"
+	"image/color"
+	"image/png"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
@@ -101,6 +106,79 @@ func PlotGraph(g *Graph[string]) {
 			Draggable: opts.Bool(true),
 		}))
 		graph.Render(w)
+	})
+
+	fmt.Println("Starting server on http://localhost:8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println(err)
+	}
+}
+
+func PlotImage(N int, img []bool, record image.Rectangle) {
+
+	newImg := image.NewRGBA(image.Rectangle{
+			Min: image.Point{0,0},
+			Max: image.Point{N,N},
+	})
+
+	x, y := 0, 0
+	for i := range img {
+		if img[i] {
+			newImg.Set(x,y,color.Black)
+		} else {
+			newImg.Set(x,y,color.White)
+		}
+		x++
+		if x >= N {
+			x = 0
+			y++
+		}
+	}
+
+	highlightColor := color.RGBA{0, 0xff, 0, 0xff}
+	AlphaMix := func(a color.RGBA, b color.RGBA, blend float64) (blended color.RGBA) {
+		f1, f2 := 1.0 - blend, blend
+		blended.R = uint8(math.Round(f1 * float64(a.R) + f2 * float64(b.R)))
+		blended.G = uint8(math.Round(f1 * float64(a.G) + f2 * float64(b.G)))
+		blended.B = uint8(math.Round(f1 * float64(a.B) + f2 * float64(b.B)))
+		blended.A = 0xff
+		return
+	}
+
+	x,y = record.Min.X, record.Min.Y
+	for y < record.Max.Y {
+
+		r, g, b, a := newImg.At(x,y).RGBA()
+		oldColor := color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)}
+		newImg.SetRGBA(x,y, AlphaMix(oldColor, highlightColor, 0.5))
+
+		x++
+		if x >= record.Max.X {
+			x = record.Min.X
+			y++
+		}
+	}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, `
+		<!doctype html>
+		<html>
+			<head>
+				<title>Submatrix</title>
+			</head>
+			<body>
+				<div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+					<h1 style="text-align: center;">Largest contiguous submatrix</h1>
+					<img src="/img.png" style="width: 30vw; height: auto; image-rendering: pixelated;" />
+				</div>
+			</body>
+		</html>
+		`)
+	})
+
+	http.HandleFunc("/img.png", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		png.Encode(w, newImg)
 	})
 
 	fmt.Println("Starting server on http://localhost:8080")

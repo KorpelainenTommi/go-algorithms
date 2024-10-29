@@ -40,6 +40,8 @@ func main() {
 		RunGraphColor()
 	case 2:
 		RunLocalMinimum()
+	case 3:
+		RunSubmatrix()
 	default:
 		fmt.Println("Not a recognized program")
 		os.Exit(1)
