@@ -25,15 +25,15 @@ const (
 type CounterPool map[int]*Counter
 
 type RecordMutex struct {
-	mu sync.Mutex
-	area int
+	mu         sync.Mutex
+	area       int
 	recordArea image.Rectangle
 }
 
 type Counter struct {
-	id int
-	finished bool
-	in, out chan bool
+	id        int
+	finished  bool
+	in, out   chan bool
 	countArea image.Rectangle
 }
 
@@ -46,34 +46,32 @@ func (c *Counter) BeginCount(recordMutex *RecordMutex) {
 	N := c.countArea.Dy()
 
 	for head < N {
-		
-		value, ok := <- c.in
+
+		value, ok := <-c.in
 		if !ok {
 			break
 		}
 
-		c.out <- true
-
 		switch mode {
-			case Clean:
-				start = head
-				if value {
-					mode = Black
-				} else {
-					mode = White
-				}
-			case Black:
-				if !value {
-					mode = Dirty
-				}
-			case White:
-				if value {
-					mode = Dirty
-				}
+		case Clean:
+			start = head
+			if value {
+				mode = Black
+			} else {
+				mode = White
+			}
+		case Black:
+			if !value {
+				mode = Dirty
+			}
+		case White:
+			if value {
+				mode = Dirty
+			}
 		}
 
 		count++
-
+		c.out <- true
 		if count >= W {
 			maxArea := W * (N - start)
 			if maxArea <= recordMutex.area {
@@ -103,12 +101,13 @@ func (c *Counter) BeginCount(recordMutex *RecordMutex) {
 		}
 	}
 
-	for _, ok := <-c.in; ok; _, ok = <-c.in {}
+	for _, ok := <-c.in; ok; _, ok = <-c.in {
+	}
 	close(c.out)
 }
 
 func FindLargest(N int, matrix []bool, reportProgress bool) image.Rectangle {
-		
+
 	recordMutex := new(RecordMutex)
 	pools := make(map[int]CounterPool)
 	counters := make([]Counter, 0)
@@ -118,12 +117,12 @@ func FindLargest(N int, matrix []bool, reportProgress bool) image.Rectangle {
 	for w := 1; w <= N; w++ {
 		for i := range N - w + 1 {
 			v := Counter{
-				id: id,
-				in: make(chan bool),
+				id:  id,
+				in:  make(chan bool),
 				out: make(chan bool),
 				countArea: image.Rectangle{
 					Min: image.Point{i, 0},
-					Max: image.Point{i+w, N},
+					Max: image.Point{i + w, N},
 				}}
 			counters = append(counters, v)
 			for vw := range w {
@@ -142,11 +141,14 @@ func FindLargest(N int, matrix []bool, reportProgress bool) image.Rectangle {
 
 	percent := 0
 	for i, b := range matrix {
-		v := pools[i % N]
+		v := pools[i%N]
 
 		for _, counter := range v {
 			counter.in <- b
-			active, ok := <- counter.out
+		}
+
+		for _, counter := range v {
+			active, ok := <-counter.out
 
 			if !active || !ok {
 				for _, p := range pools {
@@ -158,10 +160,10 @@ func FindLargest(N int, matrix []bool, reportProgress bool) image.Rectangle {
 		}
 
 		if reportProgress {
-			p := 100 * i / (N*N)
+			p := 100 * i / (N * N)
 			if p > percent {
 				percent = p
-				fmt.Println("Progress:",percent,"%")
+				fmt.Println("Progress:", percent, "%")
 			}
 		}
 	}
@@ -174,7 +176,8 @@ func FindLargest(N int, matrix []bool, reportProgress bool) image.Rectangle {
 
 	// Block until all channels close
 	for _, c := range counters {
-		for _, ok := <-c.out; ok; _, ok = <-c.out {}
+		for _, ok := <-c.out; ok; _, ok = <-c.out {
+		}
 	}
 
 	return recordMutex.recordArea
@@ -193,7 +196,7 @@ func ReadInputFile(path string) (int, []bool, error) {
 		return 0, nil, err
 	}
 
-	fmt.Println("Successfully read",format,"file")
+	fmt.Println("Successfully read", format, "file")
 	W, H := img.Bounds().Dx(), img.Bounds().Dy()
 
 	if W != H {
@@ -208,7 +211,7 @@ func ReadInputFile(path string) (int, []bool, error) {
 	x, y := B.Min.X, B.Min.Y
 
 	for i := 0; i < L; i++ {
-		r,g,b,_ := img.At(x, y).RGBA()
+		r, g, b, _ := img.At(x, y).RGBA()
 		data[i] = r <= thres && g <= thres && b <= thres
 		x++
 		if x >= B.Max.X {
@@ -294,9 +297,8 @@ func RunSubmatrix() {
 		}
 	}
 
-
 	record := FindLargest(N, matrix, !noPrint)
-	fmt.Printf("Record is the area rectangle (%v,%v) -> (%v,%v)\n",record.Min.X, record.Min.Y, record.Max.X, record.Max.Y)
+	fmt.Printf("Record is the area rectangle (%v,%v) -> (%v,%v)\n", record.Min.X, record.Min.Y, record.Max.X, record.Max.Y)
 
 	// if !noSave && len(Out) < 1 {
 	// 	saveRange := "n"

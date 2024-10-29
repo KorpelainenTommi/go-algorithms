@@ -117,16 +117,16 @@ func PlotGraph(g *Graph[string]) {
 func PlotImage(N int, img []bool, record image.Rectangle) {
 
 	newImg := image.NewRGBA(image.Rectangle{
-			Min: image.Point{0,0},
-			Max: image.Point{N,N},
+		Min: image.Point{0, 0},
+		Max: image.Point{N, N},
 	})
 
 	x, y := 0, 0
 	for i := range img {
 		if img[i] {
-			newImg.Set(x,y,color.Black)
+			newImg.Set(x, y, color.Black)
 		} else {
-			newImg.Set(x,y,color.White)
+			newImg.Set(x, y, color.White)
 		}
 		x++
 		if x >= N {
@@ -137,20 +137,20 @@ func PlotImage(N int, img []bool, record image.Rectangle) {
 
 	highlightColor := color.RGBA{0, 0xff, 0, 0xff}
 	AlphaMix := func(a color.RGBA, b color.RGBA, blend float64) (blended color.RGBA) {
-		f1, f2 := 1.0 - blend, blend
-		blended.R = uint8(math.Round(f1 * float64(a.R) + f2 * float64(b.R)))
-		blended.G = uint8(math.Round(f1 * float64(a.G) + f2 * float64(b.G)))
-		blended.B = uint8(math.Round(f1 * float64(a.B) + f2 * float64(b.B)))
+		f1, f2 := 1.0-blend, blend
+		blended.R = uint8(math.Round(f1*float64(a.R) + f2*float64(b.R)))
+		blended.G = uint8(math.Round(f1*float64(a.G) + f2*float64(b.G)))
+		blended.B = uint8(math.Round(f1*float64(a.B) + f2*float64(b.B)))
 		blended.A = 0xff
 		return
 	}
 
-	x,y = record.Min.X, record.Min.Y
+	x, y = record.Min.X, record.Min.Y
 	for y < record.Max.Y {
 
-		r, g, b, a := newImg.At(x,y).RGBA()
+		r, g, b, a := newImg.At(x, y).RGBA()
 		oldColor := color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)}
-		newImg.SetRGBA(x,y, AlphaMix(oldColor, highlightColor, 0.5))
+		newImg.SetRGBA(x, y, AlphaMix(oldColor, highlightColor, 0.5))
 
 		x++
 		if x >= record.Max.X {
